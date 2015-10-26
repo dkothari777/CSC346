@@ -1,0 +1,12 @@
+{
+  "project_name": "Compression",
+  "project_description": "CSC346 Assginment4",
+  "show_files": [
+    "main.py",
+    "app.yaml",
+    "appengine_config.py"
+  ],
+  "read_only_files": [
+    "app.yaml"
+  ]
+}

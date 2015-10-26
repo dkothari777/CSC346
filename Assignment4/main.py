@@ -1,6 +1,11 @@
 from flask import Flask
+from flask import abort
+from delta import process_delta
+from flask import json
 from pprint import pprint
 from hashlib import sha256
+from flask import request
+import logging
 import hmac
 import threading
 import dropbox
@@ -30,7 +35,8 @@ def webhook():
     for d in json.loads(request.data)['delta']:
         #do stuff
         threading.Thread(target=process_delta, args=(d,)).start()
-    return
+    logging.debug("received notification")
+    return "Checking Dropbox"
 
 @app.errorhandler(403)
 def page_not_found(e):
