@@ -16,3 +16,6 @@ libraries:
   version: "0.15"
 - name: ssl
   version: latest
+
+env_variables:
+    BOTO_CONFIG: ./boto
