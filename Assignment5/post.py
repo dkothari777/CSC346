@@ -1,6 +1,5 @@
 #! /usr/bin/python2.7
 import sys
-import ConfigParser
 import time
 from boto.dynamodb2.fields import HashKey, RangeKey, AllIndex
 from boto.dynamodb2.table import Table
@@ -14,6 +13,9 @@ def main(args):
     user = ""
     message = ""
     tags = []
+    if len(args) <3:
+        print "Wrong Arguments"
+        exit(1)
     if(len(args[1]) <= 10):
         user = args[1]
     else:
@@ -37,33 +39,57 @@ def main(args):
     if(len(message) > 140):
         print "Message is longer than 140 characters!"
         exit(1)
-    #conn = getConnection()
-    #tables = conn.list_tables()
-    #if 'Twitter' not in tables['TableNames']:
-    #    createTable()
-    #post method goes here
-    #post(user, message)
-    #scan method goes here after
-    #scan()
-    print user, message, tags
+    conn = getConnection()
+    tables = conn.list_tables()
+    if 'Users' not in tables['TableNames']:
+        createUserTable()
+    if 'Tags' not in tables['TableNames']:
+        createTagTable()
+    post(user, message, tags)
 
-def post(username, message, tags = ''):
+def post(username, message, tags = []):
     global conn
-    twitterTable = Table('Twitter', connection = conn)
-    entry = { 'User': username, 'Message': message}
-    twitterTable.put_item(data=entry, overwrite=True)
+    usersTable = Table('Users', connection = conn)
+    tagsTable = Table('Tags', connection = conn)
+    if(username[0] != '@'):
+        username = '@' + username
+    while(True):
+        try:
+            tweet_time = time.asctime(time.localtime())
+            userEntry = { 'User': username, 'Message': message, 'Time': tweet_time}
+            usersTable.put_item(data=userEntry, overwrite=False)
+        except:
+            time.sleep(1)
+        else:
+            break
+    for t in tags:
+        while(True):
+            try:
+                tweet_time = time.asctime(time.localtime())
+                tagEntry = {'User': username, 'Message': message, 'Time': tweet_time, 'Tag': t}
+                tagsTable.put_item(data=tagEntry, overwrite=False)
+            except:
+                time.sleep(1)
+            else:
+                break
 
-def createTable():
-    print "Creating Table!"
-    Table.create('Twitter',
-            schema = [HashKey('Time')],
-            indexes = [AllIndex('Tweet', parts = [
-                HashKey('User'), RangeKey('Message')])],
-            connection = conn)
+def createUserTable():
+    Table.create('Users', schema = [HashKey('User'), RangeKey('Time')],connection = conn)
     while True:
         time.sleep(5)
         try:
-            conn.describe_table('Twitter')
+            conn.describe_table('Users')
+        except Exception, e:
+            print e
+        else:
+            break
+
+def createTagTable():
+    Table.create('Tags', schema = [HashKey('Tag'), RangeKey('Time')],connection = conn)
+    while True:
+        time.sleep(5)
+        try:
+            conn.describe_table('Tags')
         except Exception, e:
             print e
         else:
@@ -73,9 +99,9 @@ def scan():
     global conn
     twitterTable = Table('Twitter', connection = conn)
     for tweet in twitterTable.scan():
+        tweet_lst = tweet.items()
         print
-        for (field, val) in tweet.items():
-            print "%s: %s" % (field, val)
+        print "%s \t %s \t %s" % (tweet_lst[2][1], tweet_lst[1][1], tweet_lst[0][1])
 
 if __name__ == '__main__':
     main(sys.argv)
